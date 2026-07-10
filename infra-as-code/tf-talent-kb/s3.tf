@@ -22,7 +22,7 @@ module "s3_source_bucket" {
 module "s3_stage_bucket" {
   source = "terraform-aws-modules/s3-bucket/aws"
 
-  bucket = format("%s-%s", local.resource_name_prefix, local.s3_multimodal_stage_bucket_name_suffix)
+  bucket                   = format("%s-%s", local.resource_name_prefix, local.s3_multimodal_stage_bucket_name_suffix)
   control_object_ownership = true
   object_ownership         = "BucketOwnerEnforced"
 

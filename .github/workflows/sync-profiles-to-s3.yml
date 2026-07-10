@@ -15,8 +15,8 @@ permissions:
 env:
   PROFILE_SOURCE_DIR: docs/profiles
   AWS_REGION: ${{ vars.AWS_REGION }}
-  S3_BUCKET: ${{ vars.S3_PROFILES_BUCKET }}
-  S3_PREFIX: ${{ vars.S3_PROFILES_PREFIX }}
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+  S3_PREFIX: ${{ vars.S3_PREFIX }}
 
 jobs:
   sync-profiles:

@@ -1,27 +1,34 @@
----
-name: CI
+name: Setup Infra
+run-name: ${{ inputs.WORKFLOW_TEXT }}
+on:
+  workflow_call:
+    inputs:
+      WORKFLOW_TEXT:
+        required: false
+        type: string
+        default: Validate the infrastructure intended for deployment in the dev environment.
+      DEPLOYMENT_ENV:
+        required: false
+        type: string
+        default: dev
+      TF_ACTION:
+        required: false
+        type: string
+        default: plan
+
 permissions:
   id-token: write # This is required for requesting the JWT from AWS.
   contents: read
   actions: read
   security-events: write
   pull-requests: write
-on:
-  pull_request:
-    branches:
-      - main
-
-# Concurrency control to prevent multiple workflow runs from conflicting
-# This is critical for Terraform to avoid state locking issues
-concurrency:
-  group: ci-${{ github.event.pull_request.number }}  # One run per PR
-  cancel-in-progress: true  # Cancel previous runs when new commits are pushed
 
 jobs:
   setup-infra:
     name: Setup Infrastructure
     runs-on: ubuntu-latest
-    environment: dev
+    environment:  ${{ inputs.DEPLOYMENT_ENV }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,10 +45,10 @@ jobs:
           aws-region: us-east-1
           role-session-name: github-sessions
 
-      - name: Terraform Init & Plan
+      - name: Terraform Init & ${{ inputs.TF_ACTION }}
         working-directory: ./infra-as-code
-        run: ./tf-wrapper.sh init
+        run: ./tf-wrapper.sh ${{ inputs.DEPLOYMENT_ENV }} init
 
-      - name: Terraform Plan
+      - name: Terraform ${{ inputs.TF_ACTION }}
         working-directory: ./infra-as-code
-        run: ./tf-wrapper.sh plan
+        run: ./tf-wrapper.sh ${{ inputs.DEPLOYMENT_ENV }} ${{ inputs.TF_ACTION }}

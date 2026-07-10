@@ -17,6 +17,7 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   S3_BUCKET: ${{ vars.S3_BUCKET }}
   S3_PREFIX: ${{ vars.S3_PREFIX }}
+  BEDROCK_SYNC_LAMBDA_FUNCTION_NAME: ${{ vars.BEDROCK_SYNC_LAMBDA_FUNCTION_NAME }}
 
 jobs:
   sync-profiles:
@@ -66,3 +67,28 @@ jobs:
           aws s3 sync "${profile_stage_dir}/" "${destination}/" \
             --exclude ".DS_Store" \
             --only-show-errors
+
+      - name: Trigger Bedrock ingestion
+        shell: bash
+        run: |
+          if [ -z "${BEDROCK_SYNC_LAMBDA_FUNCTION_NAME}" ]; then
+            echo "Repository variable BEDROCK_SYNC_LAMBDA_FUNCTION_NAME is required."
+            exit 1
+          fi
+
+
+          aws lambda invoke \
+            --function-name "${BEDROCK_SYNC_LAMBDA_FUNCTION_NAME}" \
+            --cli-binary-format raw-in-base64-out \
+            --payload '{"description":"Profile sync triggered by GitHub Actions run %s"}' \
+            response.json
+
+          status_code=$(jq -r '.statusCode' "response.json")
+
+          if [ "${status_code}" != "200" ]; then
+            echo "Bedrock ingestion trigger failed."
+            jq . "response.json"
+            exit 1
+          fi
+
+          jq . "response.json"

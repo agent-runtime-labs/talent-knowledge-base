@@ -1,0 +1,67 @@
+name: Sync Profiles To S3
+
+on:
+  push:
+    paths:
+      - "docs/profiles/**"
+      - ".github/workflows/sync-profiles-to-s3.yml"
+      - "sample-scripts/generate_profile_metadata.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROFILE_SOURCE_DIR: docs/profiles
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  S3_BUCKET: ${{ vars.S3_PROFILES_BUCKET }}
+  S3_PREFIX: ${{ vars.S3_PROFILES_PREFIX }}
+
+jobs:
+  sync-profiles:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Sync profiles to S3
+        shell: bash
+        run: |
+          if [ ! -d "${PROFILE_SOURCE_DIR}" ]; then
+            echo "Source directory '${PROFILE_SOURCE_DIR}' was not found."
+            exit 1
+          fi
+
+          if [ -z "${S3_BUCKET}" ]; then
+            echo "Repository variable S3_PROFILES_BUCKET is required."
+            exit 1
+          fi
+
+          if [ -z "${AWS_REGION}" ]; then
+            echo "Repository variable AWS_REGION is required."
+            exit 1
+          fi
+
+          profile_stage_dir="${RUNNER_TEMP}/profiles-upload"
+
+          python3 sample-scripts/generate_profile_metadata.py \
+            "${PROFILE_SOURCE_DIR}" \
+            "${profile_stage_dir}"
+
+          destination="s3://${S3_BUCKET}"
+
+          if [ -n "${S3_PREFIX}" ]; then
+            destination="${destination}/${S3_PREFIX#/}"
+          fi
+
+          aws s3 sync "${profile_stage_dir}/" "${destination}/" \
+            --exclude ".DS_Store" \
+            --only-show-errors

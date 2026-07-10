@@ -1,0 +1,18 @@
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "ollama",
+    "ANTHROPIC_API_KEY": "",
+    "ANTHROPIC_BASE_URL": "http://localhost:11434"
+  },
+  "permissions": {
+    "allow": [
+    ]
+  },
+  "model": "qwen3.6",
+  "rules": [
+    ".claude/rules/code-review.md",
+    ".claude/rules/code-style.md",
+    ".claude/rules/security.md",
+    ".claude/rules/writing.md"
+  ]
+}

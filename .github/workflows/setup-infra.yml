@@ -1,0 +1,54 @@
+name: Setup Infra
+run-name: ${{ inputs.WORKFLOW_TEXT }}
+on:
+  workflow_call:
+    inputs:
+      WORKFLOW_TEXT:
+        required: false
+        type: string
+        default: Validate the infrastructure intended for deployment in the dev environment.
+      DEPLOYMENT_ENV:
+        required: false
+        type: string
+        default: dev
+      TF_ACTION:
+        required: false
+        type: string
+        default: plan
+
+permissions:
+  id-token: write # This is required for requesting the JWT from AWS.
+  contents: read
+  actions: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  setup-infra:
+    name: Setup Infrastructure
+    runs-on: ubuntu-latest
+    environment:  ${{ inputs.DEPLOYMENT_ENV }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: github-sessions
+
+      - name: Terraform Init & ${{ inputs.TF_ACTION }}
+        working-directory: ./infra-as-code
+        run: ./tf-wrapper.sh ${{ inputs.DEPLOYMENT_ENV }} init
+
+      - name: Terraform ${{ inputs.TF_ACTION }}
+        working-directory: ./infra-as-code
+        run: ./tf-wrapper.sh ${{ inputs.DEPLOYMENT_ENV }} ${{ inputs.TF_ACTION }}

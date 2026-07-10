@@ -1,0 +1,28 @@
+---
+name: CD
+permissions:
+  id-token: write # This is required for requesting the JWT from AWS.
+  contents: read
+  actions: read
+  security-events: write
+  pull-requests: write
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Concurrency control to prevent multiple workflow runs from conflicting
+# This is critical for Terraform to avoid state locking issues
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}  # One run per PR
+  cancel-in-progress: true  # Cancel previous runs when new commits are pushed
+
+jobs:
+  infra-tf-apply:
+    uses: ./.github/workflows/setup-infra.yml
+    with:
+      WORKFLOW_TEXT: Deploy the infrastructure intended for deployment in the dev environment.
+      TF_ACTION: apply
+      DEPLOYMENT_ENV: dev
+    secrets: inherit

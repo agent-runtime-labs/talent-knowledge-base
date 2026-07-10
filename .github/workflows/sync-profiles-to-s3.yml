@@ -21,6 +21,7 @@ env:
 jobs:
   sync-profiles:
     runs-on: ubuntu-latest
+    environment: dev
 
     steps:
       - name: Checkout repository

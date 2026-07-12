@@ -8,11 +8,5 @@
     "allow": [
     ]
   },
-  "model": "qwen3.6",
-  "rules": [
-    ".claude/rules/code-review.md",
-    ".claude/rules/code-style.md",
-    ".claude/rules/security.md",
-    ".claude/rules/writing.md"
-  ]
+  "model": "qwen3.6"
 }
